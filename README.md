@@ -1,0 +1,4 @@
+- cd toi thu muc cua project
+- chay `pip install -r requirements.txt`
+- chay `python app.py`
+- mo dia chi `http://127.0.0.1:5000`

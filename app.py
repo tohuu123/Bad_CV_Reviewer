@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import os
+from LLM import analyze_cv
+from pdf2image import convert_from_path
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -27,7 +29,33 @@ def handle_upload():
         filename = file.filename
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        session['uploaded_image'] = filename
+
+        # Check if the file is a PDF and convert it to image for display
+        if filename.lower().endswith('.pdf'):
+            try:
+                # Convert PDF to images
+                images = convert_from_path(filepath)
+                if images:
+                    # Save the first page as PNG for display
+                    image_filename = os.path.splitext(filename)[0] + '.png'
+                    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+                    images[0].save(image_path, 'PNG')
+                    # Store both the original PDF and the display image
+                    session['uploaded_image'] = image_filename  # For display
+                    session['original_file'] = filename  # For LLM analysis
+                else:
+                    # If conversion fails, use the original PDF
+                    session['uploaded_image'] = filename
+                    session['original_file'] = filename
+            except Exception as e:
+                print(f"Error converting PDF: {e}")
+                # If conversion fails, use the original PDF
+                session['uploaded_image'] = filename
+                session['original_file'] = filename
+        else:
+            # For non-PDF files, use the same filename for both display and analysis
+            session['uploaded_image'] = filename
+            session['original_file'] = filename
         return redirect(url_for('review'))
     
     return redirect(url_for('upload'))
@@ -37,7 +65,7 @@ def handle_upload():
 def review():
     image_filename = session.get('uploaded_image', None)
     if not image_filename:
-        return redirect(url_for('upload'))
+        return redirect(url_for('upload'))  
     
     text_content = "This is placeholder text. Choose 'Review' or 'Fix' to update."
     
@@ -48,12 +76,17 @@ def review():
 # Function này chạy khi mình bấm nút Review
 @app.route('/review-action', methods=['POST'])
 def review_action():
-
-    # Chỗ này chắc là gọi LLM API để review CV rồi trả về text
-    # Có gì mn tạo thêm 1 file python riêng để làm phần gọi LLM rồi trả text output vô đây
-    # Set cái text_content này thành cái output của LLM
-    text_content = "dhjfkbsdfkjhgbsdkjhgbsdkfjhg"
     image_filename = session.get('uploaded_image', None)
+    original_file = session.get('original_file', None)
+    
+    if not image_filename or not original_file:
+        return redirect(url_for('upload'))
+    
+    # Get the full path of the original file for LLM analysis
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], original_file)
+    
+    # Call LLM to analyze the CV in review mode
+    text_content = analyze_cv(image_path)
     
     return render_template('review.html',
                          image_filename=image_filename,
@@ -62,10 +95,17 @@ def review_action():
 # Function này chạy khi mình bấm nút Fix
 @app.route('/fix-action', methods=['POST'])
 def fix_action():
-
-    # Tương tự cũng gọi LLM API ở chỗ này
-    text_content = "ksdzjbfvs,djhfbsd,jfh"
     image_filename = session.get('uploaded_image', None)
+    original_file = session.get('original_file', None)
+    
+    if not image_filename or not original_file:
+        return redirect(url_for('upload'))
+    
+    # Get the full path of the original file for LLM analysis
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], original_file)
+    
+    # Call LLM to analyze the CV in fix mode
+    text_content = analyze_cv(image_path)
     
     return render_template('review.html',
                          image_filename=image_filename,
@@ -73,4 +113,5 @@ def fix_action():
 
 # Chỗ ni khi nào code xong final rồi thì nhớ xoá debug=True :D
 if __name__ == '__main__':
+    app.secret_key = 'super secret key'
     app.run(debug=True)

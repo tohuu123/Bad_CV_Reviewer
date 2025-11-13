@@ -4,6 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
+from dotenv import load_dotenv
 
 # Your Pydantic models remain unchanged...
 Score = int
@@ -48,6 +49,7 @@ class CVReviewSchema(BaseModel):
     diemYeu: Optional[List[str]] = Field(None, description="Các điểm yếu cần tránh")
 
 # Setup environment variable or pass API key
+load_dotenv()
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 def load_prompt():

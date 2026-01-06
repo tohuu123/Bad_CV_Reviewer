@@ -15,6 +15,8 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const file = formData.get("image") as File | null;
+    const name = formData.get("name") as string | null;
+    const email = formData.get("email") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -27,6 +29,12 @@ export async function POST(req: Request) {
     // Save file
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(savedPath, buffer);
+
+    // Save user info to a JSON file associated with this upload
+    if (name && email) {
+      const userInfoPath = path.join(uploadDir, `${originalName}.json`);
+      fs.writeFileSync(userInfoPath, JSON.stringify({ name, email }, null, 2));
+    }
 
     let displayImage = originalName;
 

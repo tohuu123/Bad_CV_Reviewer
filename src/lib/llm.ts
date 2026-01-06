@@ -150,6 +150,16 @@ const CVReviewSchema = {
       type: SchemaType.ARRAY,
       items: { type: SchemaType.STRING },
       description: "Các điểm yếu cần tránh"
+    },
+    skills: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description: "Danh sách các kỹ năng (skills) được tìm thấy trong CV"
+    },
+    keywords: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description: "Các từ khóa (keywords) quan trọng liên quan đến công nghệ, công cụ, ngôn ngữ lập trình trong CV"
     }
   },
   required: ["phanTinhDayDu", "phanTrinhBay", "phanNoiDung", "goiYHanhDong"]
@@ -213,5 +223,124 @@ export async function analyzeCV(filePath: string, mode: 'review' | 'fix' = 'revi
     }
   ]);
 
+  return result.response.text();
+}
+
+// Skills Analysis Schema
+const SkillAnalysisSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    recommendedSkills: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description: "Danh sách các kỹ năng được đề xuất bổ sung để cải thiện CV"
+    }
+  },
+  required: ["recommendedSkills"]
+} as Schema;
+
+// Course Recommendation Schema
+const CourseRecommendationSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    courses: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          skill: {
+            type: SchemaType.STRING,
+            description: "Tên kỹ năng"
+          },
+          courseName: {
+            type: SchemaType.STRING,
+            description: "Tên khóa học"
+          },
+          provider: {
+            type: SchemaType.STRING,
+            description: "Nhà cung cấp khóa học (Coursera, Udemy, edX, etc.)"
+          },
+          url: {
+            type: SchemaType.STRING,
+            description: "Link đến khóa học (nếu có thể tạo URL hợp lý)"
+          },
+          isFree: {
+            type: SchemaType.BOOLEAN,
+            description: "Khóa học miễn phí (true) hay trả phí (false)"
+          },
+          description: {
+            type: SchemaType.STRING,
+            description: "Mô tả chi tiết về lợi ích của khóa học này cho người dùng (2-3 câu)"
+          },
+          reasonForRecommendation: {
+            type: SchemaType.STRING,
+            description: "Lý do tại sao khóa học này phù hợp với kỹ năng hiện tại và mục tiêu của người dùng (1-2 câu)"
+          }
+        },
+        required: ["skill", "courseName", "provider", "description", "reasonForRecommendation"]
+      },
+      description: "Danh sách các khóa học và chứng chỉ đề xuất"
+    }
+  },
+  required: ["courses"]
+} as Schema;
+
+export async function analyzeSkills(currentSkills: string[]) {
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: SkillAnalysisSchema,
+    },
+  });
+
+  const prompt = `Dựa trên danh sách kỹ năng hiện tại của ứng viên: ${currentSkills.join(", ")}.
+
+Hãy đề xuất các kỹ năng bổ sung mà ứng viên Fresher đang theo học Software Engineer nên học để:
+1. Bổ sung cho kỹ năng hiện có
+2. Phù hợp với xu hướng công nghệ hiện tại, đang hot ứng tuyển (từ năm 2025 trở đi)
+
+Ưu tiên các kỹ năng thực tế, có nhu cầu cao và liên quan đến kỹ năng hiện có.
+Đề xuất khoảng 5-10 kỹ năng.`;
+
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
+
+export async function recommendCourses(skills: string[], numberOfCourses: number = 5) {
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: CourseRecommendationSchema,
+    },
+  });
+
+  const prompt = `Hãy đề xuất các khóa học và chứng chỉ cho những kỹ năng sau: ${skills.join(", ")}.
+
+Yêu cầu:
+- Tổng cộng đề xuất ${numberOfCourses} khóa học
+- Ưu tiên các khóa học từ Coursera, Udemy, edX, LinkedIn Learning, Udacity, YouTube
+- Ưu tiên các khóa học miễn phí (free) trước, sau đó mới đến khóa học trả phí (paid)
+- Đảm bảo URL tồn tại (có thể là URL tìm kiếm nếu không biết chính xác)
+- Phân bổ khóa học đều cho các kỹ năng được chọn
+- Đánh dấu chính xác "isFree": true cho khóa học miễn phí, false cho khóa học trả phí
+
+Quan trọng - Cho mỗi khóa học:
+1. "isFree": true nếu khóa học hoàn toàn miễn phí, false nếu cần trả phí
+   
+2. "description": Viết mô tả chi tiết (2-3 câu) về:
+   - Người dùng sẽ học được gì từ khóa học này
+   - Lợi ích cụ thể khi hoàn thành (ví dụ: có thể làm dự án gì, áp dụng vào công việc thế nào)
+   - Tại sao khóa học này đáng tin cậy và hữu ích
+
+3. "reasonForRecommendation": Giải thích ngắn gọn (1-2 câu) tại sao khóa học này phù hợp với:
+   - Kỹ năng hiện tại của người dùng
+   - Mục tiêu phát triển nghề nghiệp
+   - Xu hướng thị trường hiện tại
+
+Viết bằng tiếng Việt, giọng văn chuyên nghiệp nhưng thân thiện, tăng độ tin cậy.`;
+
+  const result = await model.generateContent(prompt);
   return result.response.text();
 }

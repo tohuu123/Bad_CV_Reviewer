@@ -5,17 +5,24 @@ import { useRouter } from "next/navigation";
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) return;
+    if (!file || !name || !email) {
+      alert("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
 
     setUploading(true);
 
     const form = new FormData();
     form.append("image", file);
+    form.append("name", name);
+    form.append("email", email);
 
     try {
       const res = await fetch("/api/upload", {
@@ -26,7 +33,7 @@ export default function UploadPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push(`/review?img=${data.displayImage}&file=${data.originalFile}`);
+        router.push(`/review?img=${data.displayImage}&file=${data.originalFile}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`);
       } else {
         alert("Upload failed.");
       }
@@ -51,16 +58,50 @@ export default function UploadPage() {
         </p>
 
         <form onSubmit={handleUpload} className="space-y-4">
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Họ và tên <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nhập họ và tên của bạn"
+              required
+              className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-800 dark:text-white"
+            />
+          </div>
 
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Nhập email của bạn"
+              required
+              className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              CV của bạn <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              required
+              className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg"
+            />
+          </div>
 
           <button
-            disabled={!file || uploading}
+            disabled={!file || !name || !email || uploading}
             type="submit"
             className="w-full py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-primary-600 to-accent-600 hover:opacity-90 transition disabled:opacity-50"
           >

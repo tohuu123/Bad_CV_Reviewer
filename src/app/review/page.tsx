@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import ParticlesBackground from "@/components/ParticlesBackground";
 
@@ -36,10 +36,13 @@ interface CVReview {
   };
   diemManh?: string[];
   diemYeu?: string[];
+  skills?: string[];
+  keywords?: string[];
 }
 
 export default function ReviewPage() {
   const params = useSearchParams();
+  const router = useRouter();
   const img = params.get("img");
   const file = params.get("file");
 
@@ -47,6 +50,16 @@ export default function ReviewPage() {
   const [fixText, setFixText] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"review" | "fix" | null>(null);
+
+  function navigateToSkillsAnalysis() {
+    if (!reviewData?.skills || reviewData.skills.length === 0) {
+      alert("Không tìm thấy kỹ năng trong CV. Vui lòng đánh giá CV trước.");
+      return;
+    }
+    
+    const skillsParam = encodeURIComponent(JSON.stringify(reviewData.skills));
+    router.push(`/skills-analysis?skills=${skillsParam}&img=${img}&file=${file}`);
+  }
 
   async function review() {
     setLoading(true);
@@ -156,6 +169,19 @@ export default function ReviewPage() {
                     className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     {loading && mode === "fix" ? "Đang tạo gợi ý..." : "Gợi ý sửa CV"}
+                  </button>
+                  <button
+                    onClick={navigateToSkillsAnalysis}
+                    disabled={!reviewData?.skills || reviewData.skills.length === 0}
+                    className="w-full bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    🎯 Phân Tích Kỹ Năng
+                  </button>
+                  <button
+                    onClick={() => router.push('/upload')}
+                    className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    Quay về
                   </button>
                 </div>
               </div>
@@ -335,6 +361,56 @@ export default function ReviewPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Skills & Keywords */}
+                  {(reviewData.skills && reviewData.skills.length > 0) || (reviewData.keywords && reviewData.keywords.length > 0) ? (
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/20">
+                      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                        <span>🔍</span> Kỹ Năng & Từ Khóa Được Tìm Thấy
+                      </h2>
+                      
+                      {reviewData.skills && reviewData.skills.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-blue-400 mb-3 text-lg">Kỹ năng (Skills)</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {reviewData.skills.map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1 bg-blue-500/30 border border-blue-500 rounded-full text-white text-sm"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {reviewData.keywords && reviewData.keywords.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-purple-400 mb-3 text-lg">Từ khóa (Keywords)</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {reviewData.keywords.map((keyword, idx) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1 bg-purple-500/30 border border-purple-500 rounded-full text-white text-sm"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-6 p-4 bg-green-500/20 border border-green-500/50 rounded-lg">
+                        <p className="text-gray-200 text-sm flex items-start gap-2">
+                          <span className="text-green-400 text-xl">💡</span>
+                          <span>
+                            Nhấn nút <strong>"Phân Tích Kỹ Năng"</strong> bên trái để nhận đề xuất kỹ năng bổ sung và khóa học phù hợp!
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
 
                   {/* Gợi ý hành động */}
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/20">

@@ -5,7 +5,7 @@ import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { type ISourceOptions } from "@tsparticles/engine";
 import { loadSlim } from "@tsparticles/slim";
 
-const ParticlesBackground = () => {
+function ParticlesBackground() {
   const [init, setInit] = useState(false);
 
   useEffect(() => {
@@ -98,6 +98,8 @@ const ParticlesBackground = () => {
   }
 
   return null;
-};
+}
+
+ParticlesBackground.displayName = "ParticlesBackground";
 
 export default ParticlesBackground;

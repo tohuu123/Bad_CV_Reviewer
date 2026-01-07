@@ -40,22 +40,6 @@ export default function RootLayout({
             <div className="absolute left-6 top-1/2 -translate-y-1/2 text-lg font-bold text-white/90">
               Bad CV Reviewer
             </div>
-
-            {/* Centered Navigation */}
-            <div className="flex justify-center gap-6">
-              <a
-                href="/"
-                className="px-3 py-2 rounded-md hover:bg-white/10 transition"
-              >
-                Home
-              </a>
-              <a
-                href="/review"
-                className="px-3 py-2 rounded-md hover:bg-white/10 transition"
-              >
-                Review CV
-              </a>
-            </div>
           </nav>
 
           <div className="p-6">

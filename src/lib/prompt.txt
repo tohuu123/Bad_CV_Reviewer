@@ -24,9 +24,6 @@ Kinh nghiệm làm việc
 Kỹ năng và kiến thức
 Học vấn
 
-
-
-
 Về tính đầy đủ:
 Thông tin cá nhân: Bao gồm tên, email, số điện thoại, địa chỉ (optional), và một đoạn giới thiệu ngắn từ 2-3 dòng/câu (optional). Yêu cầu phần thông tin cá nhân phải rõ ràng, đầy đủ. Bao gồm đường dẫn đến Linkedin/GitHub cá nhân là một điểm cộng lớn.
 
@@ -214,9 +211,9 @@ Kinh nghiệm làm việc
 Kỹ năng và kiến thức
 Học vấn
 Dựa trên thang 100 điểm, hãy chấm điểm dựa theo các tiêu chí nêu trên tại phần Đánh giá và cho điểm theo từng nấc thang dưới đây: 
-0~24: Ứng viên không bao gồm phần này, hay ứng viên viết quá sơ sài bla bla
+0~24: Ứng viên không bao gồm phần này, hay ứng viên viết quá sơ sài 
 25~49: DFGFH
-50~74:
+50~74: 
 75~89: 
 90~100:
 Bạn hoàn toàn có thể đưa ra mức điểm là một số nguyên trong khoảng [0, 100], không nhất thiết phải là số điểm 0, 25, 50, ….
@@ -265,4 +262,41 @@ Gợi ý chỉnh sửa các nội dung chưa hợp lí (chính tả, bố cục,
 
 <output_instructions>	
 In ra các đánh giá
+
+QUAN TRỌNG - LOGIC GỢI Ý CHỈNH SỬA:
+
+CHỈ tạo gợi ý chỉnh sửa cho các trường có điểm < 80. Các trường có điểm >= 80 không cần gợi ý.
+
+Đối với "goiYChinhSua" trong phanTinhDayDu (object):
+- Kiểm tra từng trường: thongTinCaNhan, mucTieuViTri, kinhNghiemDuAn, kienThucKyNang, hocVanChungChi
+- CHỈ tạo gợi ý cho trường nào có điểm < 80
+- Mỗi gợi ý phải chi tiết, cụ thể:
+  + Liệt kê những điểm còn thiếu/yếu
+  + Hướng dẫn cần bổ sung/cải thiện gì
+  + Đưa ra ví dụ mẫu câu hoặc template cụ thể
+- Ví dụ: Nếu thongTinCaNhan = 85 thì KHÔNG tạo gợi ý, nếu mucTieuViTri = 65 thì TẠO gợi ý chi tiết
+
+Đối với "goiYChinhSua" trong phanTrinhBay (object):
+- Kiểm tra từng trường: gonGang, chuyenNghiep
+- CHỈ tạo gợi ý cho trường nào có điểm < 80
+- Mỗi gợi ý phải chi tiết về:
+  + Cách cải thiện bố cục, định dạng
+  + Hướng dẫn làm gọn gàng/chuyên nghiệp hơn
+  + Gợi ý về font chữ, màu sắc, khoảng cách
+  + Các lỗi chính tả cần sửa (nếu có)
+
+Đối với "goiYChinhSua" trong phanNoiDung (object):
+- Kiểm tra từng trường: diemThongTinCaNhan, diemKinhNghiemLamViec, diemKyNangVaKienThuc, diemHocVan
+- CHỈ tạo gợi ý cho trường nào có điểm < 80
+- Mỗi gợi ý phải bao gồm:
+  + Phân tích điểm yếu cụ thể
+  + Hướng dẫn cách viết lại
+  + Ví dụ cụ thể về cách viết tốt hơn
+  + Template mẫu câu để áp dụng ngay
+
+LƯU Ý: 
+- Không tạo gợi ý cho các trường đã đạt >= 80 điểm
+- Mỗi gợi ý phải dài ít nhất 100-200 từ, chi tiết từng bước
+- Sử dụng ngôn ngữ dễ hiểu, có cấu trúc rõ ràng
+- Đưa ra ví dụ thực tế, không chung chung
 </output_instructions>

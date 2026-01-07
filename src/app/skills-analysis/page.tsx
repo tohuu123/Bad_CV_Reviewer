@@ -118,13 +118,13 @@ export default function SkillsAnalysisPage() {
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-600">
               Phân Tích Kỹ Năng
             </h1>
-            <p className="text-gray-300 text-lg">Khám phá và phát triển kỹ năng của bạn</p>
+            <p className="text-gray-300 text-lg">Khám phá những kỹ năng có thể làm nổi bật CV của bạn !</p>
           </div>
 
           {/* Current Skills Section */}
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/20 mb-6">
             <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <span>✅</span> Kỹ Năng Hiện Tại Của Bạn
+              <span></span> Kỹ Năng Hiện Tại
             </h2>
             <div className="flex flex-wrap gap-2">
               {currentSkills.length > 0 ? (
@@ -157,7 +157,7 @@ export default function SkillsAnalysisPage() {
             <div className="space-y-6">
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/20">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span>🎯</span> Kỹ Năng Còn Thiếu ({missingSkills.length})
+                  <span></span> Kỹ năng có thể bổ sung ({missingSkills.length})
                 </h2>
                 
                 {/* Slider to select number of skills */}
@@ -190,12 +190,12 @@ export default function SkillsAnalysisPage() {
                   </div>
                   
                   <p className="text-gray-300 text-sm mt-4 italic">
-                    💡 Hệ thống sẽ tự động chọn {maxSkillsToLearn} kỹ năng quan trọng nhất dựa trên độ ưu tiên
+                    Hệ thống sẽ chọn {maxSkillsToLearn} kỹ năng quan trọng nhất bạn có thể học
                   </p>
                 </div>
 
                 <p className="text-gray-300 mb-6">
-                  Chọn các kỹ năng bạn muốn học để xem khóa học đề xuất.
+                  <strong> Chọn các kỹ năng mà bạn muốn học! </strong>
                 </p>
                 
                 {/* Group skills by category */}
@@ -252,7 +252,7 @@ export default function SkillsAnalysisPage() {
                             </div>
                             {skill.priority && skill.priority >= 8 && (
                               <span className="px-2 py-1 bg-yellow-500/30 border border-yellow-500 rounded text-xs text-yellow-100 font-bold ml-2">
-                                ⭐ Quan trọng
+                                Quan trọng
                               </span>
                             )}
                           </div>
@@ -270,7 +270,7 @@ export default function SkillsAnalysisPage() {
                   disabled={selectedSkills.length === 0}
                   className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
-                  Xem Tất Cả Khóa Học Đã Chọn ({selectedSkills.length})
+                 Học Thôi !
                 </button>
                 <button
                   onClick={() => router.back()}
@@ -305,14 +305,8 @@ export default function SkillsAnalysisPage() {
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/20">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                    <span>📚</span> Khóa Học Được Đề Xuất
+                    Danh sách các khoá học
                   </h2>
-                  <button
-                    onClick={() => setStep("skills")}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
-                  >
-                    ← Quay Lại Danh Sách Kỹ Năng
-                  </button>
                 </div>
 
                 <div className="space-y-4">
@@ -364,18 +358,18 @@ export default function SkillsAnalysisPage() {
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-4 justify-center">
                 <button
-                  onClick={() => setStep("skills")}
-                  className="flex-1 px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
-                >
-                  ← Chọn Thêm Kỹ Năng
-                </button>
+                    onClick={() => setStep("skills")}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
+                  >
+                    ← Quay lại 
+                  </button>
                 <button
                   onClick={() => router.push("/review?img=" + params.get("img") + "&file=" + params.get("file"))}
                   className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold rounded-lg transition-all"
                 >
-                  Quay Lại Đánh Giá CV
+                  Quay lại trang Đánh Giá
                 </button>
                 <button
                   onClick={() => router.push("/")}

@@ -4,7 +4,7 @@ import path from "path";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
 
-// CV Review Schema matching Python Pydantic models
+// CV Review Schema 
 const CVReviewSchema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -44,6 +44,32 @@ const CVReviewSchema = {
         nhanXet: {
           type: SchemaType.STRING,
           description: "Nhận xét về tính đầy đủ"
+        },
+        goiYChinhSua: {
+          type: SchemaType.OBJECT,
+          properties: {
+            thongTinCaNhan: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện phần Thông tin cá nhân (chỉ tạo nếu điểm < 80)"
+            },
+            mucTieuViTri: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện phần Mục tiêu/Vị trí (chỉ tạo nếu điểm < 80)"
+            },
+            kinhNghiemDuAn: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện phần Kinh nghiệm/Dự án (chỉ tạo nếu điểm < 80)"
+            },
+            kienThucKyNang: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện phần Kiến thức & Kỹ năng (chỉ tạo nếu điểm < 80)"
+            },
+            hocVanChungChi: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện phần Học vấn & Chứng chỉ (chỉ tạo nếu điểm < 80)"
+            }
+          },
+          description: "Gợi ý chỉnh sửa cho từng phần trong tính đầy đủ (chỉ bao gồm các phần có điểm < 80)"
         }
       },
       required: ["thongTinCaNhan", "mucTieuViTri", "kinhNghiemDuAn", "kienThucKyNang", "hocVanChungChi"]
@@ -66,6 +92,20 @@ const CVReviewSchema = {
         nhanXet: {
           type: SchemaType.STRING,
           description: "Nhận xét về trình bày"
+        },
+        goiYChinhSua: {
+          type: SchemaType.OBJECT,
+          properties: {
+            gonGang: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện tính gọn gàng (chỉ tạo nếu điểm < 80)"
+            },
+            chuyenNghiep: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện tính chuyên nghiệp (chỉ tạo nếu điểm < 80)"
+            }
+          },
+          description: "Gợi ý chỉnh sửa cho từng phần trong trình bày (chỉ bao gồm các phần có điểm < 80)"
         }
       },
       required: ["gonGang", "chuyenNghiep"]
@@ -112,6 +152,28 @@ const CVReviewSchema = {
           minimum: 0,
           maximum: 100,
           description: "Điểm phần học vấn (0-100)"
+        },
+        goiYChinhSua: {
+          type: SchemaType.OBJECT,
+          properties: {
+            thongTinCaNhan: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện nội dung Thông tin cá nhân (chỉ tạo nếu điểm < 80)"
+            },
+            kinhNghiemLamViec: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện nội dung Kinh nghiệm làm việc (chỉ tạo nếu điểm < 80)"
+            },
+            kyNangVaKienThuc: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện nội dung Kỹ năng & Kiến thức (chỉ tạo nếu điểm < 80)"
+            },
+            hocVan: {
+              type: SchemaType.STRING,
+              description: "Gợi ý chi tiết để cải thiện nội dung Học vấn (chỉ tạo nếu điểm < 80)"
+            }
+          },
+          description: "Gợi ý chỉnh sửa cho từng phần nội dung (chỉ bao gồm các phần có điểm < 80)"
         }
       },
       required: ["diemThongTinCaNhan", "diemKinhNghiemLamViec", "diemKyNangVaKienThuc", "diemHocVan"]
@@ -180,40 +242,43 @@ function getMimeType(filePath: string): string {
 }
 
 export async function analyzeCV(filePath: string, mode: 'review' | 'fix' = 'review') {
+  // For fix mode, retrieve stored review data
+  if (mode === 'fix') {
+    const reviewJsonPath = filePath + '.json';
+    if (!fs.existsSync(reviewJsonPath)) {
+      throw new Error('Chưa có dữ liệu đánh giá. Vui lòng thực hiện "Đánh giá CV" trước.');
+    }
+    
+    const reviewData = JSON.parse(fs.readFileSync(reviewJsonPath, 'utf-8'));
+    
+    // Extract GoiYChinhSua from all sections
+    const fixSuggestions = {
+      phanTinhDayDu: reviewData.phanTinhDayDu?.goiYChinhSua || '',
+      phanTrinhBay: reviewData.phanTrinhBay?.goiYChinhSua || '',
+      phanNoiDung: reviewData.phanNoiDung?.goiYChinhSua || ''
+    };
+    
+    return JSON.stringify(fixSuggestions);
+  }
+  
+  // Review mode - call LLM
   const promptPath = path.join(process.cwd(), "src", "lib", "prompt.txt");
   const SYSTEM_PROMPT = fs.readFileSync(promptPath, "utf-8");
-
   const fileBuffer = fs.readFileSync(filePath);
   const base64Data = fileBuffer.toString('base64');
   const mimeType = getMimeType(filePath);
-
-  let model;
-  let prompt = SYSTEM_PROMPT;
   
-  if (mode === 'review') {
-    model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: CVReviewSchema,
-      },
-    });
-  } else {
-    model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite",
-    });
-    
-    prompt += `\n\nDựa trên các tiêu chí đánh giá trên, hãy đưa ra các gợi ý CỤ THỂ và CHI TIẾT để cải thiện CV này. Bao gồm:
-    1. Những điểm cần sửa ngay lập tức
-    2. Những điểm nên thêm vào
-    3. Những điểm nên bỏ đi hoặc viết lại
-    4. Ví dụ cụ thể về cách viết tốt hơn cho từng phần
-    5. Template/mẫu câu gợi ý cho các phần quan trọng`;
-  }
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: CVReviewSchema,
+    },
+  });
 
   const result = await model.generateContent([
     {
-      text: prompt
+      text: SYSTEM_PROMPT
     },
     {
       inlineData: {
@@ -239,108 +304,3 @@ const SkillAnalysisSchema = {
   required: ["recommendedSkills"]
 } as Schema;
 
-// Course Recommendation Schema
-const CourseRecommendationSchema = {
-  type: SchemaType.OBJECT,
-  properties: {
-    courses: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          skill: {
-            type: SchemaType.STRING,
-            description: "Tên kỹ năng"
-          },
-          courseName: {
-            type: SchemaType.STRING,
-            description: "Tên khóa học"
-          },
-          provider: {
-            type: SchemaType.STRING,
-            description: "Nhà cung cấp khóa học (Coursera, Udemy, edX, etc.)"
-          },
-          url: {
-            type: SchemaType.STRING,
-            description: "Link đến khóa học (nếu có thể tạo URL hợp lý)"
-          },
-          isFree: {
-            type: SchemaType.BOOLEAN,
-            description: "Khóa học miễn phí (true) hay trả phí (false)"
-          },
-          description: {
-            type: SchemaType.STRING,
-            description: "Mô tả chi tiết về lợi ích của khóa học này cho người dùng (2-3 câu)"
-          },
-          reasonForRecommendation: {
-            type: SchemaType.STRING,
-            description: "Lý do tại sao khóa học này phù hợp với kỹ năng hiện tại và mục tiêu của người dùng (1-2 câu)"
-          }
-        },
-        required: ["skill", "courseName", "provider", "description", "reasonForRecommendation"]
-      },
-      description: "Danh sách các khóa học và chứng chỉ đề xuất"
-    }
-  },
-  required: ["courses"]
-} as Schema;
-
-export async function analyzeSkills(currentSkills: string[]) {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-lite",
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: SkillAnalysisSchema,
-    },
-  });
-
-  const prompt = `Dựa trên danh sách kỹ năng hiện tại của ứng viên: ${currentSkills.join(", ")}.
-
-Hãy đề xuất các kỹ năng bổ sung mà ứng viên Fresher đang theo học Software Engineer nên học để:
-1. Bổ sung cho kỹ năng hiện có
-2. Phù hợp với xu hướng công nghệ hiện tại, đang hot ứng tuyển (từ năm 2025 trở đi)
-
-Ưu tiên các kỹ năng thực tế, có nhu cầu cao và liên quan đến kỹ năng hiện có.
-Đề xuất khoảng 5-10 kỹ năng.`;
-
-  const result = await model.generateContent(prompt);
-  return result.response.text();
-}
-
-export async function recommendCourses(skills: string[], numberOfCourses: number = 5) {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-lite",
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: CourseRecommendationSchema,
-    },
-  });
-
-  const prompt = `Hãy đề xuất các khóa học và chứng chỉ cho những kỹ năng sau: ${skills.join(", ")}.
-
-Yêu cầu:
-- Tổng cộng đề xuất ${numberOfCourses} khóa học
-- Ưu tiên các khóa học từ Coursera, Udemy, edX, LinkedIn Learning, Udacity, YouTube
-- Ưu tiên các khóa học miễn phí (free) trước, sau đó mới đến khóa học trả phí (paid)
-- Đảm bảo URL tồn tại (có thể là URL tìm kiếm nếu không biết chính xác)
-- Phân bổ khóa học đều cho các kỹ năng được chọn
-- Đánh dấu chính xác "isFree": true cho khóa học miễn phí, false cho khóa học trả phí
-
-Quan trọng - Cho mỗi khóa học:
-1. "isFree": true nếu khóa học hoàn toàn miễn phí, false nếu cần trả phí
-   
-2. "description": Viết mô tả chi tiết (2-3 câu) về:
-   - Người dùng sẽ học được gì từ khóa học này
-   - Lợi ích cụ thể khi hoàn thành (ví dụ: có thể làm dự án gì, áp dụng vào công việc thế nào)
-   - Tại sao khóa học này đáng tin cậy và hữu ích
-
-3. "reasonForRecommendation": Giải thích ngắn gọn (1-2 câu) tại sao khóa học này phù hợp với:
-   - Kỹ năng hiện tại của người dùng
-   - Mục tiêu phát triển nghề nghiệp
-   - Xu hướng thị trường hiện tại
-
-Viết bằng tiếng Việt, giọng văn chuyên nghiệp nhưng thân thiện, tăng độ tin cậy.`;
-
-  const result = await model.generateContent(prompt);
-  return result.response.text();
-}

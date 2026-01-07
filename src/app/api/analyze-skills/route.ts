@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { analyzeSkills } from "@/lib/llm";
 import { findMissingSkills } from "@/lib/skillsDb";
 
 export async function POST(req: Request) {
@@ -13,14 +12,9 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    // Get missing skills from Firebase database
     const missingSkills = await findMissingSkills(currentSkills);
 
-    // Also get LLM-based skill recommendations for additional insights (optional)
-    // const llmResult = await analyzeSkills(currentSkills);
-    // const llmData = JSON.parse(llmResult);
-
+    // Filling detailed fields in collection of the skills in here
     return NextResponse.json({
       success: true,
       data: {

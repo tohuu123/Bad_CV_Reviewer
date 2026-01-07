@@ -9,11 +9,14 @@ function ParticlesBackground() {
   const [init, setInit] = useState(false);
 
   useEffect(() => {
-    initParticlesEngine(async (engine) => {
-      await loadSlim(engine);
-    }).then(() => {
+    const initEngine = async () => {
+      await initParticlesEngine(async (engine) => {
+        await loadSlim(engine);
+      });
       setInit(true);
-    });
+    };
+    
+    initEngine();
   }, []);
 
   const options: ISourceOptions = useMemo(
@@ -87,17 +90,18 @@ function ParticlesBackground() {
     [],
   );
 
-  if (init) {
-    return (
-      <Particles
-        id="tsparticles"
-        options={options}
-        className="fixed inset-0 z-0"
-      />
-    );
-  }
-
-  return null;
+  // Always render the container, even before init
+  return (
+    <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 to-black">
+      {init && (
+        <Particles
+          id="tsparticles"
+          options={options}
+          className="absolute inset-0"
+        />
+      )}
+    </div>
+  );
 }
 
 ParticlesBackground.displayName = "ParticlesBackground";

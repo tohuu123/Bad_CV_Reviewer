@@ -2,7 +2,6 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import ParticlesBackground from "@/components/ParticlesBackground";
 
 // Helper component to format text content
 function FormattedText({ text }: { text: string }) {
@@ -385,10 +384,7 @@ export default function ReviewPage() {
   };
 
   return (
-    <div>
-      <ParticlesBackground />
-      
-      <div className="relative z-10 container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
@@ -1045,6 +1041,5 @@ export default function ReviewPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

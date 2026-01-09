@@ -20,6 +20,10 @@ interface MissingSkill {
   skill_url: string;
   description?: string;
   priority?: number;
+  job_tags?: string[];
+  difficulty_level?: string;
+  related_tools?: string[];
+  "time-learning"?: number;
 }
 
 export default function SkillsAnalysisPage() {
@@ -35,6 +39,14 @@ export default function SkillsAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"skills" | "view-courses">("skills");
   const [maxSkillsToLearn, setMaxSkillsToLearn] = useState<number>(0);
+  const [selectedJobTag, setSelectedJobTag] = useState<string | null>(null);
+
+  const jobTags = [
+    "Backend Developer",
+    "Frontend Developer",
+    "Full-Stack Developer",
+    "DevOps / Cloud Engineer"
+  ];
 
   useEffect(() => {
     if (skillsParam) {
@@ -61,6 +73,8 @@ export default function SkillsAnalysisPage() {
       
       if (data.success && data.data) {
         const missing = data.data.missingSkills || [];
+        console.log("Missing skills data:", missing);
+        console.log("First skill:", missing[0]);
         setMissingSkills(missing);
         // Set default to all missing skills
         setMaxSkillsToLearn(missing.length);
@@ -87,9 +101,34 @@ export default function SkillsAnalysisPage() {
     setMaxSkillsToLearn(value);
     
     // Auto-select top priority skills based on slider value
-    const sortedSkills = [...missingSkills].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    const filteredSkills = getFilteredSkills();
+    const sortedSkills = [...filteredSkills].sort((a, b) => (b.priority || 0) - (a.priority || 0));
     const topSkills = sortedSkills.slice(0, value);
     setSelectedSkills(topSkills.map(s => s.name));
+  }
+
+  function getFilteredSkills(): MissingSkill[] {
+    if (!selectedJobTag) {
+      return missingSkills;
+    }
+    return missingSkills.filter(skill => 
+      skill.job_tags && skill.job_tags.includes(selectedJobTag)
+    );
+  }
+
+  function handleJobTagFilter(tag: string | null) {
+    setSelectedJobTag(tag);
+    
+    const filteredSkills = tag 
+      ? missingSkills.filter(skill => skill.job_tags && skill.job_tags.includes(tag))
+      : missingSkills;
+    
+    // Update slider max value
+    setMaxSkillsToLearn(filteredSkills.length);
+    
+    // Auto-select all filtered skills
+    const sortedSkills = [...filteredSkills].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    setSelectedSkills(sortedSkills.map(s => s.name));
   }
 
   function viewCoursesForSkill(skill: MissingSkill) {
@@ -157,36 +196,68 @@ export default function SkillsAnalysisPage() {
             <div className="space-y-6">
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/20">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span></span> Kỹ năng có thể bổ sung ({missingSkills.length})
+                  <span></span> Kỹ năng có thể bổ sung ({getFilteredSkills().length})
                 </h2>
+                
+                {/* Job Tag Filter */}
+                <div className="mb-6 p-6 bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl border border-purple-500/30">
+                  <label className="text-white font-semibold text-lg mb-4 block">
+                    Lọc theo vị trí công việc:
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => handleJobTagFilter(null)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        selectedJobTag === null
+                          ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg scale-105"
+                          : "bg-white/10 text-gray-300 hover:bg-white/20"
+                      }`}
+                    >
+                      Tất cả
+                    </button>
+                    {jobTags.map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => handleJobTagFilter(tag)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                          selectedJobTag === tag
+                            ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg scale-105"
+                            : "bg-white/10 text-gray-300 hover:bg-white/20"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 
                 {/* Slider to select number of skills */}
                 <div className="mb-8 p-6 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-xl border border-blue-500/30">
                   <div className="flex items-center justify-between mb-4">
-                    <label className="text-white font-semibold text-lg flex items-center gap-2">
-                      <span>📊</span> Chọn số kỹ năng muốn bổ sung:
+                    <label className="text-white font-semibold text-lg">
+                      Chọn số kỹ năng muốn bổ sung:
                     </label>
                     <div className="text-right">
                       <span className="text-3xl font-bold text-blue-400">{maxSkillsToLearn}</span>
-                      <span className="text-gray-400 text-sm ml-1">/ {missingSkills.length}</span>
+                      <span className="text-gray-400 text-sm ml-1">/ {getFilteredSkills().length}</span>
                     </div>
                   </div>
                   
                   <input
                     type="range"
                     min="1"
-                    max={missingSkills.length}
+                    max={getFilteredSkills().length}
                     value={maxSkillsToLearn}
                     onChange={(e) => handleSliderChange(parseInt(e.target.value))}
                     className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
                     style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(maxSkillsToLearn / missingSkills.length) * 100}%, #374151 ${(maxSkillsToLearn / missingSkills.length) * 100}%, #374151 100%)`
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(maxSkillsToLearn / getFilteredSkills().length) * 100}%, #374151 ${(maxSkillsToLearn / getFilteredSkills().length) * 100}%, #374151 100%)`
                     }}
                   />
                   
                   <div className="flex justify-between mt-2 text-sm text-gray-400">
                     <span>1 kỹ năng</span>
-                    <span>Tất cả ({missingSkills.length})</span>
+                    <span>Tất cả ({getFilteredSkills().length})</span>
                   </div>
                   
                   <p className="text-gray-300 text-sm mt-4 italic">
@@ -200,8 +271,8 @@ export default function SkillsAnalysisPage() {
                 
                 {/* Group skills by category */}
                 {Object.entries(
-                  // Filter to show only top priority skills based on slider value
-                  [...missingSkills]
+                  // Filter to show only top priority skills based on slider value and job tag
+                  [...getFilteredSkills()]
                     .sort((a, b) => (b.priority || 0) - (a.priority || 0))
                     .slice(0, maxSkillsToLearn)
                     .reduce((acc, skill) => {
@@ -219,42 +290,110 @@ export default function SkillsAnalysisPage() {
                       {skills.map((skill) => (
                         <div
                           key={skill.name}
-                          className={`bg-black/30 rounded-lg p-4 border-2 transition-all hover:scale-[1.02] ${
+                          className={`bg-black/30 rounded-lg p-5 border-2 transition-all hover:scale-[1.02] ${
                             selectedSkills.includes(skill.name)
                               ? "border-blue-500 bg-blue-500/10"
                               : "border-white/10 hover:border-white/30"
                           }`}
                         >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <button
-                                  onClick={() => toggleSkill(skill.name)}
-                                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                                    selectedSkills.includes(skill.name)
-                                      ? "bg-blue-500 border-blue-400"
-                                      : "border-gray-500 hover:border-blue-400"
-                                  }`}
-                                >
-                                  {selectedSkills.includes(skill.name) && (
-                                    <span className="text-white text-xs">✓</span>
-                                  )}
-                                </button>
-                                <h4 className="text-white font-semibold text-lg">
-                                  {skill.name}
-                                </h4>
-                              </div>
+                          <div className="flex items-start gap-3">
+                            <button
+                              onClick={() => toggleSkill(skill.name)}
+                              className={`w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                selectedSkills.includes(skill.name)
+                                   ? "bg-blue-500 border-blue-400"
+                                  : "border-gray-500 hover:border-blue-400"
+                              }`}
+                            >
+                              {selectedSkills.includes(skill.name) && (
+                                <span className="text-white text-xs">✓</span>
+                              )}
+                            </button>
+                            <div className="flex-1 space-y-3">
+                              {/* Name */}
+                              <h4 className="text-white font-bold text-lg">
+                                {skill.name}
+                              </h4>
+                              
+                              {/* Description */}
                               {skill.description && (
-                                <p className="text-gray-400 text-sm ml-7">
+                                <p className="text-gray-300 text-sm leading-relaxed">
                                   {skill.description}
                                 </p>
                               )}
+                              
+                              {/* Difficulty Level */}
+                              {skill.difficulty_level && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-400 text-xs">Độ khó:</span>
+                                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                    skill.difficulty_level.toLowerCase() === 'beginner' ? 'bg-green-500/20 border border-green-400/50 text-green-200' :
+                                    skill.difficulty_level.toLowerCase() === 'intermediate' ? 'bg-yellow-500/20 border border-yellow-400/50 text-yellow-200' :
+                                    'bg-red-500/20 border border-red-400/50 text-red-200'
+                                  }`}>
+                                    {skill.difficulty_level}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* Related Tools */}
+                              {skill.related_tools && skill.related_tools.length > 0 && (
+                                <div>
+                                  <p className="text-gray-400 text-xs mb-1.5">Công cụ liên quan:</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {skill.related_tools.map((tool, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-2 py-0.5 bg-cyan-500/20 border border-cyan-400/50 rounded text-xs text-cyan-200"
+                                      >
+                                        {tool}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Job Tags */}
+                              {skill.job_tags && skill.job_tags.length > 0 && (
+                                <div>
+                                  <p className="text-gray-400 text-xs mb-1.5">Phù hợp cho:</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {skill.job_tags.map((tag, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-2 py-0.5 bg-purple-500/20 border border-purple-400/50 rounded text-xs text-purple-200"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Time Learning */}
+                              {skill["time-learning"] && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-400 text-xs">Thời gian học:</span>
+                                  <span className="px-2 py-0.8 rounded font-bold text-sm bg-blue-500/20 border border-blue-400/50 text-blue-200">
+                                    {skill["time-learning"]} giờ
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* Priority - from 1 (low) to 10 (high) */}
+                              {skill.priority && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-400 text-xs">Độ ưu tiên:</span>
+                                  <span className={`px-2 py-0.8 rounded font-bold text-sm ${
+                                    skill.priority >= 7 ? 'bg-red-500/20 border border-red-400/50 text-red-200' :
+                                    skill.priority >= 4 ? 'bg-yellow-500/20 border border-yellow-400/50 text-yellow-200' :
+                                    'bg-green-500/20 border border-green-400/50 text-green-200'
+                                  }`}>
+                                    {skill.priority <= 3 ? 'Cao' : skill.priority <= 7 ? 'Trung Bình' : 'Thấp'} 
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                            {skill.priority && skill.priority >= 8 && (
-                              <span className="px-2 py-1 bg-yellow-500/30 border border-yellow-500 rounded text-xs text-yellow-100 font-bold ml-2">
-                                Quan trọng
-                              </span>
-                            )}
                           </div>
                         </div>
                       ))}

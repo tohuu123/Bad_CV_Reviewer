@@ -24,7 +24,11 @@ export async function POST(req: Request) {
           category: skill.category,
           skill_url: skill.skill_url,
           description: skill.description,
-          priority: skill.priority
+          priority: skill.priority,
+          job_tags: skill.job_tags,
+          difficulty_level: skill.difficulty_level,
+          related_tools: skill.related_tools,
+          "time-learning": skill["time-learning"]
         })),
         totalMissing: missingSkills.length
       },
@@ -37,3 +41,7 @@ export async function POST(req: Request) {
     );
   }
 }
+
+/*
+API này nhận danh sách kỹ năng hiện có từ CV, kiểm tra tính hợp lệ, so sánh với cơ sở dữ liệu kỹ năng chuẩn và trả về các kỹ năng còn thiếu để người dùng ưu tiên học thêm.
+*/

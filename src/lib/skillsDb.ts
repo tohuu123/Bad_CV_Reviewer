@@ -15,6 +15,10 @@ export interface Skill {
   skill_url: string;
   description?: string;
   priority?: number;
+  job_tags?: string[];
+  difficulty_level?: string;
+  related_tools?: string[];
+  "time-learning"?: number;
 }
 
 const SKILLS_COLLECTION = 'skills';
@@ -120,4 +124,26 @@ export async function addMultipleSkills(skills: Omit<Skill, 'id'>[]): Promise<nu
   }
   
   return successCount;
+}
+
+export async function filterSkillsByJogTags(jog_tags: string[]): Promise<Skill[]> {
+  try {
+    const skillsCol = collection(db, SKILLS_COLLECTION);
+    const snapshot = await getDocs(skillsCol);
+    const filteredSkills: Skill[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data() as DocumentData;
+      const skillJogTags: string[] = data.jog_tags || [];
+      if (jog_tags.some(tag => skillJogTags.includes(tag))) {
+        filteredSkills.push({
+          id: doc.id,
+          ...data as Omit<Skill, 'id'>
+        });
+      }
+    });
+    return filteredSkills;
+  } catch (error) {
+    console.error('Error filtering skills by jog_tags:', error);
+    return [];
+  }
 }

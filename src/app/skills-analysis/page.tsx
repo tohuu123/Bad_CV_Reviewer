@@ -17,7 +17,7 @@ interface Course {
 interface MissingSkill {
   name: string;
   category: string;
-  skill_url: string;
+  skill_url: string[];
   description?: string;
   priority?: number;
   job_tags?: string[];
@@ -273,7 +273,7 @@ export default function SkillsAnalysisPage() {
                 {Object.entries(
                   // Filter to show only top priority skills based on slider value and job tag
                   [...getFilteredSkills()]
-                    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+                    .sort((a, b) => (a.priority || 0) - (b.priority || 0))
                     .slice(0, maxSkillsToLearn)
                     .reduce((acc, skill) => {
                       if (!acc[skill.category]) acc[skill.category] = [];
@@ -479,16 +479,22 @@ export default function SkillsAnalysisPage() {
                             </p>
                           )}
 
-                          <div className="flex items-center gap-3">
-                            <a
-                              href={skill.skill_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white text-sm font-bold rounded-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50"
-                            >
-                              <span>Học Ngay</span>
-                              <span className="text-lg">→</span>
-                            </a>
+                          <div className="flex flex-wrap items-center gap-3">
+                            {skill.skill_url && skill.skill_url.length > 0 ? (
+                              skill.skill_url.map((url, index) => (
+                                <a
+                                  key={index}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-purple-600 hover:to-pink-700 text-white text-sm font-bold rounded-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50"
+                                >
+                                  <span>Nguồn học {index + 1}</span>
+                                </a>
+                              ))
+                            ) : (
+                              <span className="text-gray-400 text-sm">Chưa có tài liệu học</span>
+                            )}
                           </div>
                         </div>
                       </div>

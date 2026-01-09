@@ -12,7 +12,7 @@ export interface Skill {
   id?: string;
   name: string;
   category: string;
-  skill_url: string;
+  skill_url: string[];
   description?: string;
   priority?: number;
   job_tags?: string[];
@@ -88,9 +88,9 @@ export async function findMissingSkills(currentSkills: string[]): Promise<Skill[
       return !normalizedCurrentSkills.includes(skillName);
     });
     
-    // Sort by priority (higher priority first)
+    // Sort by priority (lower priority first)
     return missingSkills.sort((a, b) => 
-      (b.priority || 0) - (a.priority || 0)
+       (a.priority || 0) - (b.priority || 0)
     );
   } catch (error) {
     console.error('Error finding missing skills:', error);
